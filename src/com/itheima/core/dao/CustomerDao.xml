@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper  namespace="com.itheima.core.dao.CustomerDao" >
+	<!-- 写条件代码段 -->
+	<sql id="selectCustomerListWhere">
+	<!-- 将要使用的where语句 -->
+	<where>
+		<if test=" cust_name != null ">
+		 	and cust_name like "%"#{cust_name}"%"
+		</if>
+		<if test=" cust_source != null ">
+			and cust_source = #{cust_source}
+		</if>
+		<if test=" cust_industry != null ">
+			and cust_industry = #{cust_industry}
+		</if>
+		<if test=" cust_level != null ">
+			and cust_level = #{cust_level}
+		</if>
+	</where>
+	</sql>
+	<!-- 进行查询 -->
+	<select id="selectCustomerList" parameterType="customer" resultType="customer" >
+		SELECT 
+			cust_id,
+			cust_name,
+			cust_user_id,
+			cust_create_id,
+			cust_source,
+			cust_industry,
+			cust_level,
+			cust_linkman,
+			cust_phone,
+			cust_mobile,
+			cust_createtime
+		FROM
+			customer a
+		LEFT JOIN (<!-- 左外连接 ,客户来源 ‘002’-->
+		SELECT 
+			dict_id,
+			dict_item_name
+		FROM
+			base_dict
+		WHERE
+			dict_type_code='002'
+			) b ON a.cust_source = b.dict_id
+		LEFT JOIN(<!-- 左外连接，客户所属行业 ‘001’ -->  
+		SELECT 
+			dict_id,
+			dict_item_name
+		FROM
+			base_dict
+		WHERE
+			dict_type_code='001'
+			) c ON a.cust_industry = c.dict_id
+		LEFT JOIN(<!-- 左外连接，客户级别 ‘006’ -->
+		SELECT	
+			dict_id,
+			dict_type_name
+		FROM
+			base_dict
+		WHERE
+			dict_type_code='006'
+			) d ON a.cust_level = d.dict_id
+			<!-- 增加where语句 -->
+		<include refid="selectCustomerListWhere" />
+		<!-- 执行分页,这里面没有与，只有 and ,||的时候就用 while  -->
+		<if test=" start != null and rows != null ">
+			limit #{start} , #{rows}
+		</if>
+	</select>
+	
+	<!-- 数量查询 -->
+	<select id="selectCustomerListCount" parameterType="customer" resultType="Integer" >
+		select count(*)
+		from customer
+		<include refid="selectCustomerListWhere" />
+	</select>
+</mapper>
